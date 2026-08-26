@@ -1,16 +1,18 @@
-import { phoneCatalog } from "@/lib/phones/catalog";
 import type { Phone } from "@/types/battle";
+import { searchDevices, getDevice, getDeviceBundle } from "@/lib/device/mobileapi";
+import { normalizeDevice } from "@/lib/device/normalize";
 
 export interface PhoneProvider { search(query: string): Promise<Phone[]>; get(id: string): Promise<Phone | undefined>; }
 
-export const catalogProvider: PhoneProvider = {
+export const mobileApiProvider: PhoneProvider = {
   async search(query) {
-    const q = query.trim().toLowerCase();
-    if (!q) return phoneCatalog;
-    return phoneCatalog.filter((p) => `${p.brand} ${p.name}`.toLowerCase().includes(q));
+    if (!query.trim()) return [];
+    const result = await searchDevices({ name: query, exact: false });
+    return Promise.all(result.devices.map(async d => normalizeDevice(d, await getDeviceBundle(d.id))));
   },
-  async get(id) { return phoneCatalog.find((p) => p.id === id); },
+  async get(id) {
+    const device = await getDevice(Number(id));
+    if (!device) return undefined;
+    return normalizeDevice(device, await getDeviceBundle(device.id));
+  },
 };
-
-// Future live providers can implement PhoneProvider (for example a licensed device API)
-// without changing the battle engine or UI.
