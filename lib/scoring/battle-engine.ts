@@ -1,15 +1,29 @@
 import { BattleResult, BattleRound, Phone, SPEC_KEYS, SpecKey } from "@/types/battle";
 
 export function scoreRound(left: Phone, right: Phone, spec: SpecKey): BattleRound {
-  const leftScore = left.specs[spec];
-  const rightScore = right.specs[spec];
-  return { spec, leftScore, rightScore, winner: leftScore === rightScore ? "draw" : leftScore > rightScore ? "left" : "right" };
+  const leftRaw = Number(left.specs[spec]);
+  const rightRaw = Number(right.specs[spec]);
+  const leftValid = Number.isFinite(leftRaw) && leftRaw >= 0;
+  const rightValid = Number.isFinite(rightRaw) && rightRaw >= 0;
+  const total = (leftValid ? leftRaw : 0) + (rightValid ? rightRaw : 0);
+
+  // Keep the battle UI simple: every category is represented as a percentage
+  // of the two phones' comparable value instead of exposing long raw numbers.
+  const leftScore = total > 0 && leftValid ? Math.round((leftRaw / total) * 100) : 0;
+  const rightScore = total > 0 && rightValid ? 100 - leftScore : 0;
+  const winner = leftScore === rightScore ? "draw" : leftScore > rightScore ? "left" : "right";
+
+  return { spec, leftScore, rightScore, winner };
 }
 
 export function runBattle(left: Phone, right: Phone): BattleResult {
   const rounds = SPEC_KEYS.map((spec) => scoreRound(left, right, spec));
-  const valid = rounds.filter((r) => Number.isFinite(r.leftScore) && Number.isFinite(r.rightScore));
-  const leftTotal = valid.reduce((sum, r) => sum + r.leftScore, 0);
-  const rightTotal = valid.reduce((sum, r) => sum + r.rightScore, 0);
-  return { rounds, leftTotal, rightTotal, winner: leftTotal === rightTotal ? "draw" : leftTotal > rightTotal ? "left" : "right" };
+  const leftTotal = rounds.reduce((sum, r) => sum + r.leftScore, 0);
+  const rightTotal = rounds.reduce((sum, r) => sum + r.rightScore, 0);
+  return {
+    rounds,
+    leftTotal,
+    rightTotal,
+    winner: leftTotal === rightTotal ? "draw" : leftTotal > rightTotal ? "left" : "right",
+  };
 }
