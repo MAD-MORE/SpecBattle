@@ -1,40 +1,4 @@
-export type DeviceProfile = {
-  platform: string;
-  userAgent: string;
-  screen: { width: number; height: number; pixelRatio: number; colorDepth: number };
-  hardware: { logicalCores: number | null; memoryGB: number | null; touchPoints: number };
-  capabilities: { webgl: boolean; webgpu: boolean; camera: boolean; microphone: boolean };
-  battery: { supported: boolean; level: number | null; charging: boolean | null };
-  network: { effectiveType: string | null; downlinkMbps: number | null; rttMs: number | null };
-  collectedAt: string;
-};
-
-function canUseCamera() {
-  return typeof navigator !== "undefined" && !!navigator.mediaDevices?.getUserMedia;
-}
-
-function hasWebGL() {
-  if (typeof document === "undefined") return false;
-  const canvas = document.createElement("canvas");
-  return !!canvas.getContext("webgl") || !!canvas.getContext("experimental-webgl");
-}
-
-export async function collectDeviceProfile(): Promise<DeviceProfile> {
-  const nav = navigator as Navigator & { deviceMemory?: number; connection?: { effectiveType?: string; downlink?: number; rtt?: number }; gpu?: unknown };
-  let battery: DeviceProfile["battery"] = { supported: false, level: null, charging: null };
-  const getBattery = (nav as Navigator & { getBattery?: () => Promise<{ level: number; charging: boolean }> }).getBattery;
-  if (getBattery) {
-    try { const b = await getBattery.call(nav); battery = { supported: true, level: b.level, charging: b.charging }; } catch {}
-  }
-  const connection = nav.connection;
-  return {
-    platform: navigator.platform,
-    userAgent: navigator.userAgent,
-    screen: { width: screen.width, height: screen.height, pixelRatio: devicePixelRatio, colorDepth: screen.colorDepth },
-    hardware: { logicalCores: navigator.hardwareConcurrency ?? null, memoryGB: nav.deviceMemory ?? null, touchPoints: navigator.maxTouchPoints ?? 0 },
-    capabilities: { webgl: hasWebGL(), webgpu: !!nav.gpu, camera: canUseCamera(), microphone: !!navigator.mediaDevices?.getUserMedia },
-    battery,
-    network: { effectiveType: connection?.effectiveType ?? null, downlinkMbps: connection?.downlink ?? null, rttMs: connection?.rtt ?? null },
-    collectedAt: new Date().toISOString(),
-  };
-}
+export type DeviceProfile={platform:string;model:string|null;platformVersion:string|null;architecture:string|null;bitness:string|null;userAgent:string;screen:{width:number;height:number;pixelRatio:number;colorDepth:number};hardware:{logicalCores:number|null;memoryGB:number|null;touchPoints:number};capabilities:{webgl:boolean;webgpu:boolean;camera:boolean;microphone:boolean};battery:{supported:boolean;level:number|null;charging:boolean|null};network:{effectiveType:string|null;downlinkMbps:number|null;rttMs:number|null};collectedAt:string};
+function webgl(){if(typeof document==='undefined')return false;const c=document.createElement('canvas');return !!c.getContext('webgl')||!!c.getContext('experimental-webgl')}
+async function uaHints(){const ua=(navigator as Navigator&{userAgentData?:{getHighEntropyValues:(h:string[])=>Promise<Record<string,string>>}}).userAgentData;if(!ua)return{model:null,platformVersion:null,architecture:null,bitness:null};try{const v=await ua.getHighEntropyValues(['model','platformVersion','architecture','bitness']);return{model:v.model||null,platformVersion:v.platformVersion||null,architecture:v.architecture||null,bitness:v.bitness||null}}catch{return{model:null,platformVersion:null,architecture:null,bitness:null}}}
+export async function collectDeviceProfile():Promise<DeviceProfile>{const n=navigator as Navigator&{deviceMemory?:number;gpu?:unknown;connection?:{effectiveType?:string;downlink?:number;rtt?:number};getBattery?:()=>Promise<{level:number;charging:boolean}>};const hints=await uaHints();let battery:DeviceProfile['battery']={supported:false,level:null,charging:null};if(n.getBattery){try{const b=await n.getBattery();battery={supported:true,level:b.level,charging:b.charging}}catch{}}return{...hints,platform:n.platform,userAgent:n.userAgent,screen:{width:screen.width,height:screen.height,pixelRatio:devicePixelRatio,colorDepth:screen.colorDepth},hardware:{logicalCores:n.hardwareConcurrency??null,memoryGB:n.deviceMemory??null,touchPoints:n.maxTouchPoints??0},capabilities:{webgl:webgl(),webgpu:!!n.gpu,camera:!!n.mediaDevices?.getUserMedia,microphone:!!n.mediaDevices?.getUserMedia},battery,network:{effectiveType:n.connection?.effectiveType??null,downlinkMbps:n.connection?.downlink??null,rttMs:n.connection?.rtt??null},collectedAt:new Date().toISOString()}}
