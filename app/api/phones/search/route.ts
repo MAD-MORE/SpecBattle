@@ -1,0 +1,3 @@
+import { NextRequest,NextResponse } from "next/server";
+import { searchDevices } from "@/lib/device/mobileapi";
+export async function GET(req:NextRequest){const q=req.nextUrl.searchParams.get("q")?.trim();if(!q)return NextResponse.json({devices:[]});try{const data=await searchDevices({name:q,exact:false});return NextResponse.json({devices:(data.devices??[]).slice(0,8).map(d=>({id:d.id,name:d.name,brand:d.brand_name??d.manufacturer_name??"Unknown",modelNumbers:d.model_numbers??""}))});}catch(error){const message=error instanceof Error?error.message:"Search failed";return NextResponse.json({error:message},{status:message.includes("MOBILEAPI_KEY")?503:502})}}
