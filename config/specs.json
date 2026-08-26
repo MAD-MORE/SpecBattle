@@ -1,0 +1,13 @@
+{
+  "rulesVersion": "1.0",
+  "rounds": [
+    {"key":"performance","label":"Performance","weight":1},
+    {"key":"camera","label":"Camera","weight":1},
+    {"key":"display","label":"Display","weight":1},
+    {"key":"battery","label":"Battery","weight":1},
+    {"key":"storage","label":"Storage","weight":1},
+    {"key":"connectivity","label":"Connectivity","weight":1}
+  ],
+  "scoreRange": {"min":0,"max":100},
+  "tiePrecision": 0.01
+}

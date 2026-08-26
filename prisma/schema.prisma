@@ -1,0 +1,64 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  email     String?  @unique
+  devices   Device[]
+  createdAt DateTime @default(now())
+}
+
+model Device {
+  id          String   @id @default(cuid())
+  ownerId     String?
+  owner       User?    @relation(fields: [ownerId], references: [id])
+  brand       String
+  model       String
+  imageUrl    String?
+  specsJson   Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  battlesA    Battle[] @relation("DeviceA")
+  battlesB    Battle[] @relation("DeviceB")
+  winners     Battle[] @relation("Winner")
+  roundsWon  BattleRound[] @relation("RoundWinner")
+}
+
+model Battle {
+  id              String        @id @default(cuid())
+  deviceAId       String
+  deviceBId       String
+  winnerDeviceId  String?
+  status          String
+  scoreA          Float
+  scoreB          Float
+  rulesVersion    String
+  createdAt       DateTime      @default(now())
+  completedAt     DateTime?
+  deviceA         Device        @relation("DeviceA", fields: [deviceAId], references: [id])
+  deviceB         Device        @relation("DeviceB", fields: [deviceBId], references: [id])
+  winner          Device?       @relation("Winner", fields: [winnerDeviceId], references: [id])
+  rounds          BattleRound[]
+}
+
+model BattleRound {
+  id             String   @id @default(cuid())
+  battleId       String
+  specKey        String
+  scoreA         Float
+  scoreB         Float
+  winnerDeviceId String?
+  sequence       Int
+  createdAt      DateTime @default(now())
+  battle         Battle   @relation(fields: [battleId], references: [id], onDelete: Cascade)
+  winner         Device?  @relation("RoundWinner", fields: [winnerDeviceId], references: [id])
+
+  @@unique([battleId, sequence])
+}
