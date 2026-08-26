@@ -4,41 +4,25 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import { runBattle } from "@/lib/scoring/battle-engine";
 import { demoPhones } from "@/lib/phones/demo";
-import type { BattleStage } from "@/types/battle";
+import { BATTLE_STAGES, ROUND_DURATION_MS } from "@/lib/battles/stages";
 
 const labels = { performance: "Performance", camera: "Camera", display: "Display", battery: "Battery", storage: "Storage", connectivity: "Connectivity" } as const;
-const icons = { performance: "⚡", camera: "📸", display: "🖥️", battery: "🔋", storage: "💾", connectivity: "🌐" } as const;
+const icons = { performance: "⚡", camera: "📸", display: "◉", battery: "⌁", storage: "▣", connectivity: "⌁" } as const;
 
 export default function BattleArena() {
   const result = useMemo(() => runBattle(...demoPhones), []);
-  const [stageIndex, setStageIndex] = useState(-1);
-  const stages: BattleStage[] = ["battle-start", ...result.rounds.map((r) => r.spec), "final"];
-
-  useEffect(() => {
-    const timer = window.setInterval(() => setStageIndex((i) => Math.min(i + 1, stages.length - 1)), 2200);
-    return () => window.clearInterval(timer);
-  }, [stages.length]);
-
-  const stage = stages[Math.max(0, stageIndex)];
+  const [index, setIndex] = useState(0);
+  const stage = BATTLE_STAGES[index];
+  useEffect(() => { const timer = window.setTimeout(() => setIndex((i) => (i + 1) % BATTLE_STAGES.length), ROUND_DURATION_MS); return () => window.clearTimeout(timer); }, [index]);
   const round = result.rounds.find((r) => r.spec === stage);
-  const isFinal = stage === "final";
-
-  return (
-    <main className="arena">
-      <header><span className="brand">SPEC<span>BATTLE</span></span><span className="status">LIVE BATTLE</span></header>
-      <section className="phones"><div className="phone left"><b>{demoPhones[0].name}</b><span>{demoPhones[0].brand}</span></div><div className="vs">VS</div><div className="phone right"><b>{demoPhones[1].name}</b><span>{demoPhones[1].brand}</span></div></section>
-      <section className="stage-wrap">
-        <AnimatePresence mode="wait">
-          {stageIndex < 0 ? <motion.div className="intro" key="intro" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>TAP INTO THE BATTLE</motion.div> : isFinal ? (
-            <motion.div className="card final" key="final" initial={{ scale: .7, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}><div className="icon">🏆</div><h1>{result.winner === "draw" ? "DRAW" : `${result.winner === "left" ? demoPhones[0].name : demoPhones[1].name} WINS`}</h1><div className="totals"><strong>{result.leftTotal}</strong><span>—</span><strong>{result.rightTotal}</strong></div></motion.div>
-          ) : stage === "battle-start" ? <motion.div className="card start" key="start" initial={{ y: 80, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -80, opacity: 0 }}><div className="icon">⚔️</div><h1>BATTLE START</h1></motion.div> : round ? (
-            <motion.div className="card" key={round.spec} initial={{ x: 240, opacity: 0, rotate: 3 }} animate={{ x: 0, opacity: 1, rotate: 0 }} exit={{ x: -240, opacity: 0, rotate: -3 }} transition={{ type: "spring", stiffness: 160, damping: 18 }}>
-              <div className="icon">{icons[round.spec]}</div><p className="eyebrow">SPEC ROUND</p><h1>{labels[round.spec]}</h1><div className="scores"><div><b>{round.leftScore}</b><span>{demoPhones[0].name}</span></div><div className="strike">VS</div><div><b>{round.rightScore}</b><span>{demoPhones[1].name}</span></div></div><div className={`winner ${round.winner}`}>{round.winner === "draw" ? "DRAW" : `${round.winner === "left" ? demoPhones[0].name : demoPhones[1].name} TAKES THE ROUND`}</div>
-            </motion.div>
-          ) : null}
-        </AnimatePresence>
-      </section>
-      <footer><span>ROUND {Math.max(0, stageIndex)}/{stages.length - 2}</span><div className="progress"><motion.div animate={{ width: `${Math.max(0, stageIndex) / (stages.length - 1) * 100}%` }} /></div></footer>
-    </main>
-  );
+  const progress = (index / (BATTLE_STAGES.length - 1)) * 100;
+  const title = stage === "battle-start" ? "BATTLE START" : stage === "final" ? "FINAL VERDICT" : labels[stage];
+  return <main className="arena">
+    <header><div className="brand">SPEC<span>BATTLE</span></div><div className="live"><i /> LIVE</div></header>
+    <section className="combatants"><div className="combatant"><div className="phone-orb">{demoPhones[0].brand.slice(0,1)}</div><div><b>{demoPhones[0].name}</b><small>{demoPhones[0].brand}</small></div></div><div className="versus">VS</div><div className="combatant right"><div><b>{demoPhones[1].name}</b><small>{demoPhones[1].brand}</small></div><div className="phone-orb">{demoPhones[1].brand.slice(0,1)}</div></div></section>
+    <section className="arena-stage"><AnimatePresence mode="wait">
+      {stage === "final" ? <motion.div className="battle-card final-card" key="final" initial={{ opacity: 0, scale: .82, y: 35 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 1.08, y: -35 }}><div className="spec-icon">🏆</div><span className="round-label">FINAL VERDICT</span><h1>{result.winner === "draw" ? "DRAW" : `${result.winner === "left" ? demoPhones[0].name : demoPhones[1].name} WINS`}</h1><div className="final-score"><strong>{result.leftTotal}</strong><span>—</span><strong>{result.rightTotal}</strong></div></motion.div> : stage === "battle-start" ? <motion.div className="battle-card start-card" key="start" initial={{ opacity: 0, scale: .75 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.12 }}><div className="cross">⚔</div><span className="round-label">READY</span><h1>BATTLE START</h1><p>LET THE SPECS DECIDE</p></motion.div> : round ? <motion.div className="battle-card" key={stage} initial={{ opacity: 0, x: 260, rotate: 4, scale: .94 }} animate={{ opacity: 1, x: 0, rotate: 0, scale: 1 }} exit={{ opacity: 0, x: -260, rotate: -4, scale: .94 }} transition={{ type: "spring", stiffness: 180, damping: 20 }}><div className="spec-icon">{icons[stage]}</div><span className="round-label">SPEC ROUND</span><h1>{title}</h1><div className="duel-score"><div className={round.winner === "left" ? "champ" : ""}><strong>{round.leftScore}</strong><span>{demoPhones[0].name}</span></div><em>VS</em><div className={round.winner === "right" ? "champ" : ""}><strong>{round.rightScore}</strong><span>{demoPhones[1].name}</span></div></div><div className="round-result">{round.winner === "draw" ? "DRAW" : `${round.winner === "left" ? demoPhones[0].name : demoPhones[1].name} TAKES THE ROUND`}</div></motion.div> : null}
+    </AnimatePresence></section>
+    <footer><span>ROUND {Math.min(index, 6)} / 6</span><div className="progress"><motion.div animate={{ width: `${progress}%` }} /></div><span>{title.toUpperCase()}</span></footer>
+  </main>;
 }
