@@ -1,5 +1,5 @@
-import BattleArena from "@/components/battle/BattleArena";
+import RealBattleArena from "@/components/battle/RealBattleArena";
 
 export default function Home() {
-  return <BattleArena />;
+  return <RealBattleArena />;
 }
