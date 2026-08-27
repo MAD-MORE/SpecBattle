@@ -12,18 +12,20 @@ export default function PhoneVisual({ phone, side, winner = false, loser = false
   useEffect(() => {
     if (!root.current) return;
     const node = root.current;
-    gsap.killTweensOf(node);
-    if (winner) {
-      gsap.timeline()
-        .to(node, { scale: 1.08, duration: 0.18 })
-        .to(node, { x: side === "left" ? -8 : 8, rotation: side === "left" ? -2 : 2, duration: 0.08, repeat: 4, yoyo: true })
-        .to(node, { x: 0, rotation: 0, scale: 1.02, duration: 0.2 });
-    } else if (loser) {
-      gsap.to(node, { scale: 0.94, opacity: 0.32, duration: 0.3 });
-    } else {
-      gsap.to(node, { scale: 1, opacity: 1, x: 0, rotation: 0, duration: 0.25 });
-    }
-    return () => { gsap.killTweensOf(node); };
+    const ctx = gsap.context(() => {
+      gsap.killTweensOf(node);
+      if (winner) {
+        gsap.timeline({ defaults: { ease: "power2.out" } })
+          .to(node, { scale: 1.08, duration: 0.18 })
+          .to(node, { x: side === "left" ? -9 : 9, rotation: side === "left" ? -2.2 : 2.2, duration: 0.07, repeat: 5, yoyo: true })
+          .to(node, { x: 0, rotation: 0, scale: 1.04, duration: 0.22 });
+      } else if (loser) {
+        gsap.to(node, { scale: 0.93, opacity: 0.3, filter: "grayscale(0.55)", duration: 0.35, ease: "power2.out" });
+      } else {
+        gsap.to(node, { scale: 1, opacity: 1, filter: "grayscale(0)", x: 0, rotation: 0, duration: 0.28, ease: "power2.out" });
+      }
+    }, root);
+    return () => { ctx.revert(); };
   }, [winner, loser, side]);
 
   return (
