@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.madmore.specbattle"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.madmore.specbattle"
