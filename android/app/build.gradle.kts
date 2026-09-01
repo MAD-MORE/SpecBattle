@@ -12,9 +12,12 @@ android {
         applicationId = "com.madmore.specbattle"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "0.2.0"
     }
+
+    signingConfigs { create("release") { val p=System.getenv("ANDROID_KEYSTORE_PATH"); val sp=System.getenv("ANDROID_KEYSTORE_PASSWORD"); val ka=System.getenv("ANDROID_KEY_ALIAS"); val kp=System.getenv("ANDROID_KEY_PASSWORD"); if (!p.isNullOrBlank() && !sp.isNullOrBlank() && !ka.isNullOrBlank() && !kp.isNullOrBlank()) { storeFile=file(p); storePassword=sp; keyAlias=ka; keyPassword=kp } } }
+    buildTypes { release { isMinifyEnabled=true; isShrinkResources=true; signingConfig=signingConfigs.getByName("release"); proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"),"proguard-rules.pro") } }
 
     buildFeatures { compose = true }
 
