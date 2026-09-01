@@ -15,7 +15,8 @@ data class PhoneSpec(
     val gpu: Double? = null,
     val camera: Double? = null,
     val battery: Double? = null,
-    val display: Double? = null
+    val display: Double? = null,
+    val ram: Double? = null
 )
 
 data class Phone(
@@ -39,6 +40,7 @@ private fun PhoneSpec.toAtomicSpecs(): List<PhoneSpec> = listOfNotNull(
     camera?.let { PhoneSpec(key = "camera", category = "Camera", value = it) },
     battery?.let { PhoneSpec(key = "battery", category = "Battery", value = it) },
     display?.let { PhoneSpec(key = "display", category = "Display", value = it) },
+    ram?.let { PhoneSpec(key = "ram", category = "RAM", value = it, unit = "GB") },
     value?.let { PhoneSpec(key = "value", category = "Value", value = it) }
 ).ifEmpty {
     if (key.isNotBlank()) listOf(this) else emptyList()
