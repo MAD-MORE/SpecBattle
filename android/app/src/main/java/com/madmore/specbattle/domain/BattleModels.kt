@@ -4,12 +4,18 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class PhoneSpec(
-    val key: String,
-    val category: String,
+    val key: String = "",
+    val category: String = "",
     val value: Double? = null,
     val unit: String? = null,
     val higherIsBetter: Boolean = true,
-    val weight: Double = 1.0
+    val weight: Double = 1.0,
+    // Compatibility fields for the UI's legacy demo-phone constructor.
+    val cpu: Double? = null,
+    val gpu: Double? = null,
+    val camera: Double? = null,
+    val battery: Double? = null,
+    val display: Double? = null
 )
 
 data class Phone(
@@ -17,7 +23,26 @@ data class Phone(
     val brand: String,
     val model: String,
     val specs: List<PhoneSpec>
-)
+) {
+    // Backward-compatible constructor used by the current demo UI.
+    constructor(model: String, specs: PhoneSpec) : this(
+        id = "demo-${model.lowercase().replace(Regex("[^a-z0-9]+"), "-").trim('-')}",
+        brand = model.substringBefore(' ', model),
+        model = model,
+        specs = specs.toAtomicSpecs()
+    )
+}
+
+private fun PhoneSpec.toAtomicSpecs(): List<PhoneSpec> = listOfNotNull(
+    cpu?.let { PhoneSpec(key = "cpu", category = "CPU", value = it) },
+    gpu?.let { PhoneSpec(key = "gpu", category = "GPU", value = it) },
+    camera?.let { PhoneSpec(key = "camera", category = "Camera", value = it) },
+    battery?.let { PhoneSpec(key = "battery", category = "Battery", value = it) },
+    display?.let { PhoneSpec(key = "display", category = "Display", value = it) },
+    value?.let { PhoneSpec(key = "value", category = "Value", value = it) }
+).ifEmpty {
+    if (key.isNotBlank()) listOf(this) else emptyList()
+}
 
 data class SpecComparison(
     val key: String,
