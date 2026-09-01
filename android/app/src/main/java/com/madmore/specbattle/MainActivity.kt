@@ -57,7 +57,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Offset
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -547,38 +547,35 @@ private fun CategoryStat(
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = if (category.contains("Performance", ignoreCase = true)) {
-                            Icons.Rounded.Bolt
-                        } else {
-                            Icons.Rounded.Smartphone
-                        },
+                        imageVector = Icons.Rounded.Bolt,
                         contentDescription = null,
                         tint = Blue
                     )
                 }
-                Spacer(modifier = Modifier.width(10.dp))
-                Text(
-                    text = category,
-                    color = Ink,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.weight(1f)
-                )
-                Text(
-                    text = winnerLabel,
-                    color = if (winnerLabel == "Draw" || winnerLabel == "No clear winner") Muted else Green,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                Spacer(modifier = Modifier.width(11.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = category,
+                        color = Ink,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 15.sp
+                    )
+                    Text(
+                        text = winnerLabel,
+                        color = Muted,
+                        fontSize = 11.sp
+                    )
+                }
             }
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(11.dp))
             LinearProgressIndicator(
                 progress = { progress },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(7.dp)
-                    .clip(RoundedCornerShape(8.dp)),
+                    .clip(RoundedCornerShape(50)),
                 color = Blue,
-                trackColor = Color(0xFFE9EEF7)
+                trackColor = Color(0xFFE8ECF4)
             )
         }
     }
@@ -588,64 +585,61 @@ private fun CategoryStat(
 private fun ActivityCard() {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(22.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.White.copy(alpha = 0.94f)
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+        shape = RoundedCornerShape(23.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.94f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(modifier = Modifier.padding(18.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceAround
-            ) {
-                Metric(value = "12", label = "Battles")
-                Metric(value = "8", label = "Wins")
-                Metric(value = "67%", label = "Win rate")
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(text = "Recent battles", color = Ink, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Galaxy S25  •  Victory  •  92–87",
-                color = Muted,
-                fontSize = 12.sp
-            )
-            Text(
-                text = "Pixel 10 Pro  •  Defeat  •  89–91",
-                color = Muted,
-                fontSize = 12.sp
-            )
+        Column(modifier = Modifier.padding(17.dp)) {
+            ActivityRow("Latest battle", "Galaxy S25 Ultra vs iPhone 16 Pro", "WIN")
+            Spacer(modifier = Modifier.height(12.dp))
+            ActivityRow("Longest streak", "7 victories", "7×")
+            Spacer(modifier = Modifier.height(12.dp))
+            ActivityRow("Next milestone", "25 total battles", "96%")
         }
     }
 }
 
-private fun demoPhoneA() = Phone(
-    id = "demo-a",
-    brand = "Spec Battle",
-    model = "Phone A",
-    specs = listOf(
-        PhoneSpec("cpu", "Performance", 3.2, "GHz", true, 2.0),
-        PhoneSpec("gpu", "Performance", 920.0, "score", true, 2.0),
-        PhoneSpec("ram", "Memory", 12.0, "GB", true, 1.0),
-        PhoneSpec("storage", "Storage", 256.0, "GB", true, 1.0),
-        PhoneSpec("refresh_rate", "Display", 120.0, "Hz", true, 1.0),
-        PhoneSpec("battery", "Battery", 5000.0, "mAh", true, 1.0),
-        PhoneSpec("weight", "Physical", 185.0, "g", false, 0.5)
+@Composable
+private fun ActivityRow(title: String, value: String, badge: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(title, color = Muted, fontSize = 11.sp)
+            Text(value, color = Ink, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+        }
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(10.dp))
+                .background(Color(0xFFEAFBF5))
+                .padding(horizontal = 9.dp, vertical = 6.dp)
+        ) {
+            Text(badge, color = Green, fontWeight = FontWeight.Bold, fontSize = 11.sp)
+        }
+    }
+}
+
+private fun demoPhoneA(): Phone = Phone(
+    model = "Galaxy S25 Ultra",
+    specs = PhoneSpec(
+        cpu = 9.6,
+        gpu = 9.3,
+        camera = 9.4,
+        battery = 9.2,
+        display = 9.6,
+        value = 8.4
     )
 )
 
-private fun demoPhoneB() = Phone(
-    id = "demo-b",
-    brand = "Spec Battle",
-    model = "Phone B",
-    specs = listOf(
-        PhoneSpec("cpu", "Performance", 3.0, "GHz", true, 2.0),
-        PhoneSpec("gpu", "Performance", 880.0, "score", true, 2.0),
-        PhoneSpec("ram", "Memory", 8.0, "GB", true, 1.0),
-        PhoneSpec("storage", "Storage", 512.0, "GB", true, 1.0),
-        PhoneSpec("refresh_rate", "Display", 144.0, "Hz", true, 1.0),
-        PhoneSpec("battery", "Battery", 4800.0, "mAh", true, 1.0),
-        PhoneSpec("weight", "Physical", 172.0, "g", false, 0.5)
+private fun demoPhoneB(): Phone = Phone(
+    model = "iPhone 16 Pro",
+    specs = PhoneSpec(
+        cpu = 9.4,
+        gpu = 9.5,
+        camera = 9.5,
+        battery = 8.7,
+        display = 9.2,
+        value = 8.2
     )
 )
