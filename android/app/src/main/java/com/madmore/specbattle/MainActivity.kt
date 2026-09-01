@@ -34,6 +34,14 @@ import androidx.compose.material.icons.rounded.Bolt
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.EmojiEvents
 import androidx.compose.material.icons.rounded.NotificationsNone
+import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.Leaderboard
+import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.Memory
+import androidx.compose.material.icons.rounded.CameraAlt
+import androidx.compose.material.icons.rounded.BatteryFull
+import androidx.compose.material.icons.rounded.Storage
+import androidx.compose.material.icons.rounded.Monitor
 import androidx.compose.material.icons.rounded.Smartphone
 import androidx.compose.material.icons.rounded.SportsMma
 import androidx.compose.material3.Button
@@ -52,6 +60,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -85,6 +95,8 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+private enum class AppTab { DASHBOARD, LEAGUE, PROFILE }
+
 @Composable
 private fun SpecBattleApp() {
     MaterialTheme(
@@ -94,7 +106,7 @@ private fun SpecBattleApp() {
             surface = Color.White
         )
     ) {
-        AnimatedBackdrop { HomeScreen() }
+        AnimatedBackdrop { MainShell() }
     }
 }
 
@@ -133,7 +145,24 @@ private fun AnimatedBackdrop(content: @Composable () -> Unit) {
 }
 
 @Composable
-private fun HomeScreen() {
+private fun MainShell() {
+    var tab by remember { mutableStateOf(AppTab.DASHBOARD) }
+    Column(Modifier.fillMaxSize()) {
+        Box(Modifier.weight(1f)) {
+            AnimatedContent(targetState = tab, label = "tab-content") { selected ->
+                when (selected) {
+                    AppTab.DASHBOARD -> HomeScreen({ tab = AppTab.PROFILE }, { tab = AppTab.LEAGUE })
+                    AppTab.LEAGUE -> LeagueScreen { tab = AppTab.DASHBOARD }
+                    AppTab.PROFILE -> ProfileScreen { tab = AppTab.DASHBOARD }
+                }
+            }
+        }
+        BottomNavigationBar(tab) { tab = it }
+    }
+}
+
+@Composable
+private fun HomeScreen(onProfile: () -> Unit, onLeague: () -> Unit) {
     val a = remember { demoPhoneA() }
     val b = remember { demoPhoneB() }
     val result = remember { BattleEngine.battle(a, b) }
@@ -146,8 +175,8 @@ private fun HomeScreen() {
         contentPadding = PaddingValues(20.dp),
         verticalArrangement = Arrangement.spacedBy(17.dp)
     ) {
-        item { Header() }
-        item { AccountCard() }
+        item { Header(onProfile) }
+        item { AccountCard(onLeague) }
         item {
             SectionTitle(
                 title = "Choose your battle",
@@ -196,7 +225,7 @@ private fun HomeScreen() {
 }
 
 @Composable
-private fun Header() {
+private fun Header(onProfile: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -223,7 +252,7 @@ private fun Header() {
                 tint = Ink
             )
         }
-        IconButton(onClick = {}) {
+        IconButton(onClick = onProfile) {
             Icon(
                 imageVector = Icons.Rounded.AccountCircle,
                 contentDescription = "Profile",
@@ -235,7 +264,7 @@ private fun Header() {
 }
 
 @Composable
-private fun AccountCard() {
+private fun AccountCard(onLeague: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(25.dp),
@@ -277,12 +306,7 @@ private fun AccountCard() {
                     fontWeight = FontWeight.SemiBold
                 )
             }
-            Icon(
-                imageVector = Icons.Rounded.EmojiEvents,
-                contentDescription = "Rank",
-                tint = Orange,
-                modifier = Modifier.size(27.dp)
-            )
+            IconButton(onClick = onLeague) { Icon(Icons.Rounded.EmojiEvents, "Open league", tint = Orange, modifier = Modifier.size(27.dp)) }
         }
         Row(
             modifier = Modifier
@@ -525,6 +549,7 @@ private fun CategoryStat(
         Winner.UNKNOWN -> "No clear winner"
     }
     val progress = categoryResult?.let { maxOf(it.scoreA, it.scoreB).coerceIn(0.0, 1.0).toFloat() } ?: 0f
+    val categoryIcon = when (category.lowercase()) { "ram" -> Icons.Rounded.Memory; "camera" -> Icons.Rounded.CameraAlt; "battery" -> Icons.Rounded.BatteryFull; "storage" -> Icons.Rounded.Storage; "display" -> Icons.Rounded.Monitor; else -> Icons.Rounded.Bolt }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -547,7 +572,7 @@ private fun CategoryStat(
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = Icons.Rounded.Bolt,
+                        imageVector = categoryIcon,
                         contentDescription = null,
                         tint = Blue
                     )
@@ -620,6 +645,56 @@ private fun ActivityRow(title: String, value: String, badge: String) {
     }
 }
 
+@Composable
+private fun BottomNavigationBar(tab: AppTab, onTabSelected: (AppTab) -> Unit) {
+    Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp), colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = .98f)), elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)) {
+        Row(Modifier.fillMaxWidth().padding(8.dp), horizontalArrangement = Arrangement.SpaceAround) {
+            NavItem("Dashboard", Icons.Rounded.Home, tab == AppTab.DASHBOARD) { onTabSelected(AppTab.DASHBOARD) }
+            NavItem("League", Icons.Rounded.Leaderboard, tab == AppTab.LEAGUE) { onTabSelected(AppTab.LEAGUE) }
+            NavItem("Profile", Icons.Rounded.Person, tab == AppTab.PROFILE) { onTabSelected(AppTab.PROFILE) }
+        }
+    }
+}
+@Composable
+private fun NavItem(label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, selected: Boolean, onClick: () -> Unit) {
+    val s by animateFloatAsState(if (selected) 1.08f else 1f, tween(250), label = "nav-scale")
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.scale(s).clip(RoundedCornerShape(16.dp)).clickable(onClick = onClick).padding(horizontal = 18.dp, vertical = 5.dp)) {
+        Icon(icon, label, tint = if (selected) Blue else Muted, modifier = Modifier.size(24.dp))
+        Text(label, fontSize = 10.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium, color = if (selected) Blue else Muted)
+    }
+}
+@Composable
+private fun LeagueScreen(onBack: () -> Unit) {
+    val phones = listOf("Galaxy S25 Ultra" to 1842, "iPhone 16 Pro" to 1819, "Pixel 10 Pro" to 1788, "OnePlus 13" to 1744)
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        item { Header {} }; item { SectionTitle("Global League", "Your competitive phone-battle ranking") }; item { LeagueHero() }
+        items(phones) { entry ->
+            val phone = entry.first; val rating = entry.second
+            Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = .95f))) {
+                Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text((phones.indexOf(entry) + 1).toString(), fontWeight = FontWeight.Black, color = Violet, fontSize = 18.sp); Spacer(Modifier.width(14.dp)); Icon(Icons.Rounded.Smartphone, null, tint = Blue); Spacer(Modifier.width(10.dp)); Text(phone, Modifier.weight(1f), fontWeight = FontWeight.Bold, color = Ink); Text(rating.toString(), fontWeight = FontWeight.ExtraBold, color = Green)
+                }
+            }
+        }
+        item { Button(onClick = onBack, modifier = Modifier.fillMaxWidth().height(50.dp), shape = RoundedCornerShape(16.dp)) { Text("Back to Dashboard") } }
+    }
+}
+@Composable
+private fun LeagueHero() {
+    val pulse by rememberInfiniteTransition(label = "league-pulse").animateFloat(0.96f, 1.03f, infiniteRepeatable(tween(1200), RepeatMode.Reverse), label = "pulse")
+    Card(Modifier.fillMaxWidth().scale(pulse), shape = RoundedCornerShape(28.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+        Column(Modifier.padding(22.dp), horizontalAlignment = Alignment.CenterHorizontally) { Icon(Icons.Rounded.EmojiEvents, null, tint = Orange, modifier = Modifier.size(48.dp)); Spacer(Modifier.height(8.dp)); Text("PROVING GROUND", fontSize = 12.sp, letterSpacing = 1.8.sp, color = Violet, fontWeight = FontWeight.Bold); Text("Ranked #12", fontSize = 31.sp, color = Ink, fontWeight = FontWeight.Black); Text("1,842 rating • 17 wins", color = Muted) }
+    }
+}
+@Composable
+private fun ProfileScreen(onBack: () -> Unit) {
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        item { Header {} }; item { SectionTitle("Your Profile", "Identity, performance and progress") }; item { AccountCard {} }
+        item { Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) { Column(Modifier.padding(18.dp)) { Text("Performance", color = Ink, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold); Spacer(Modifier.height(14.dp)); Metric("1,842", "League rating"); Spacer(Modifier.height(10.dp)); Metric("7", "Best streak"); Spacer(Modifier.height(10.dp)); Metric("86%", "Category accuracy") } } }
+        item { Button(onClick = onBack, modifier = Modifier.fillMaxWidth().height(50.dp), shape = RoundedCornerShape(16.dp)) { Text("Back to Dashboard") } }
+    }
+}
+
 private fun demoPhoneA(): Phone = Phone(
     model = "Galaxy S25 Ultra",
     specs = PhoneSpec(
@@ -628,7 +703,8 @@ private fun demoPhoneA(): Phone = Phone(
         camera = 9.4,
         battery = 9.2,
         display = 9.6,
-        value = 8.4
+        value = 8.4,
+        ram = 12.0
     )
 )
 
@@ -640,6 +716,7 @@ private fun demoPhoneB(): Phone = Phone(
         camera = 9.5,
         battery = 8.7,
         display = 9.2,
-        value = 8.2
+        value = 8.2,
+        ram = 8.0
     )
 )
