@@ -3,6 +3,8 @@ package com.madmore.specbattle.data
 import io.github.jan.supabase.realtime.RealtimeChannel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
 
 @Serializable
 data class BattleEvent(
@@ -17,15 +19,20 @@ data class BattleEvent(
 )
 
 class BattleRealtime(private val channel: RealtimeChannel) {
-    fun events(): Flow<BattleEvent> = channel.broadcastFlow(event = "battle_event")
+    fun events(): Flow<BattleEvent> = channel.broadcastFlow<BattleEvent>(event = "battle_event")
 
-    suspend fun join() = channel.join(blockUntilJoined = true)
+    suspend fun join() {
+        channel.subscribe(blockUntilSubscribed = true)
+    }
 
     suspend fun publish(event: BattleEvent) {
-        channel.broadcast(event = "battle_event", message = event)
+        channel.broadcast(
+            event = "battle_event",
+            message = Json.encodeToJsonElement(BattleEvent.serializer(), event).jsonObject
+        )
     }
 
     suspend fun close() {
-        channel.leave()
+        channel.unsubscribe()
     }
 }
