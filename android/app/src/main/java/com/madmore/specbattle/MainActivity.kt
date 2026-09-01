@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
@@ -32,6 +31,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.madmore.specbattle.domain.BattleEngine
@@ -49,9 +49,7 @@ class MainActivity : ComponentActivity() {
 @androidx.compose.runtime.Composable
 private fun SpecBattleApp() {
     MaterialTheme(colorScheme = darkColorScheme()) {
-        Surface(modifier = Modifier.fillMaxSize()) {
-            HomeScreen()
-        }
+        Surface(modifier = Modifier.fillMaxSize()) { HomeScreen() }
     }
 }
 
@@ -70,7 +68,6 @@ private fun HomeScreen() {
         Text("⚔️ SPEC BATTLE", style = MaterialTheme.typography.headlineLarge)
         Text("Stop arguing. Let the phones battle.", fontSize = 15.sp)
         Spacer(Modifier.height(28.dp))
-
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.padding(18.dp)) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -101,11 +98,17 @@ private fun PhoneCard(name: String, score: Double, winner: Boolean) {
 @androidx.compose.runtime.Composable
 private fun BattlePreview(result: com.madmore.specbattle.domain.BattleResult) {
     val transition = rememberInfiniteTransition(label = "battle")
-    val offset by transition.animateFloat(
-        initialValue = -10f,
-        targetValue = 10f,
+    val leftX by transition.animateFloat(
+        initialValue = -12f,
+        targetValue = 12f,
         animationSpec = infiniteRepeatable(tween(350), RepeatMode.Reverse),
-        label = "phone-motion"
+        label = "left-phone"
+    )
+    val rightX by transition.animateFloat(
+        initialValue = 12f,
+        targetValue = -12f,
+        animationSpec = infiniteRepeatable(tween(350), RepeatMode.Reverse),
+        label = "right-phone"
     )
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -114,15 +117,13 @@ private fun BattlePreview(result: com.madmore.specbattle.domain.BattleResult) {
             contentAlignment = Alignment.Center
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("📱", fontSize = 52.sp, modifier = Modifier.padding(end = (offset * -1).dp))
+                Text("📱", fontSize = 52.sp, modifier = Modifier.graphicsLayer { translationX = leftX })
                 Text("⚔️", fontSize = 34.sp)
-                Text("📱", fontSize = 52.sp, modifier = Modifier.padding(start = offset.dp))
+                Text("📱", fontSize = 52.sp, modifier = Modifier.graphicsLayer { translationX = rightX })
             }
         }
         Spacer(Modifier.height(14.dp))
-        result.categories.forEach { category ->
-            Text("${category.category}: ${category.winner}")
-        }
+        result.categories.forEach { category -> Text("${category.category}: ${category.winner}") }
         Spacer(Modifier.height(10.dp))
         Text("Winner: ${result.winner}", style = MaterialTheme.typography.headlineSmall)
         Text("Confidence: ${"%.0f".format(result.confidence * 100)}%")
@@ -130,9 +131,7 @@ private fun BattlePreview(result: com.madmore.specbattle.domain.BattleResult) {
 }
 
 private fun demoPhoneA() = Phone(
-    id = "demo-a",
-    brand = "Spec Battle",
-    model = "Phone A",
+    id = "demo-a", brand = "Spec Battle", model = "Phone A",
     specs = listOf(
         PhoneSpec("cpu", "Performance", 3.2, "GHz", true, 2.0),
         PhoneSpec("gpu", "Performance", 920.0, "score", true, 2.0),
@@ -145,9 +144,7 @@ private fun demoPhoneA() = Phone(
 )
 
 private fun demoPhoneB() = Phone(
-    id = "demo-b",
-    brand = "Spec Battle",
-    model = "Phone B",
+    id = "demo-b", brand = "Spec Battle", model = "Phone B",
     specs = listOf(
         PhoneSpec("cpu", "Performance", 3.0, "GHz", true, 2.0),
         PhoneSpec("gpu", "Performance", 880.0, "score", true, 2.0),
